@@ -1,5 +1,5 @@
 ##########Pré e pós imputação SCZ 04_06_19
-#versao plink
+#PLINK v1.90b6.9 64-bit (4 Mar 2019)  
 # por Jessica Mauer
 
 ############PARA SANGER#############
@@ -54,25 +54,23 @@ nohup ./filterCHR9-22 &
 #juntando arquivos
 bcftools concat -Oz 1filter.vcf.gz 2filter.vcf.gz 3filter.vcf.gz 4filter.vcf.gz 5filter.vcf.gz 6filter.vcf.gz 7filter.vcf.gz 8filter.vcf.gz 9filter.vcf.gz 10filter.vcf.gz 11filter.vcf.gz 12filter.vcf.gz 13filter.vcf.gz 14filter.vcf.gz 15filter.vcf.gz 16filter.vcf.gz 17filter.vcf.gz 18filter.vcf.gz 19filter.vcf.gz 20filter.vcf.gz 21filter.vcf.gz 22filter.vcf.gz -o scz_imp_bruta.vcf.gz
 
-#Converter para ped e map
-plink --vcf scz_imp_bruta.vcf.gz --recode --out scz_imp
+#Converter para .bed .bim .fam, excluindo variantes multialélicas
+plink --vcf scz_imp_bruta.vcf.gz --biallelic-only strict --keep-allele-order --make-bed --out scz_imp
 
 #Remover indels 
-plink --file scz_imp --snps-only just-acgt --make-bed --out scz_imp_semindels
+plink --bfile scz_imp --snps-only just-acgt --make-bed --out scz_imp_semindels
 
 #Fazendo arquivo updatesex:
 awk '{print $1, $2, $5}' SCZ_QC_ibd.fam > upd_sex_scz.txt
-plink --bfile scz_imp_semindels --update-sex upd_sex_scz.txt --make-bed --out scz_imputado_updatesex
 
-#atualizando fenotipo
+#Fazendo arquivo fenotipo
 awk '{print $1, $2, $6}' SCZ_QC_ibd.fam > upd_pheno_scz.txt
-plink --bfile scz_imputado_updatesex --pheno upd_pheno_scz.txt --make-bed --out scz_imputado_updatesex_pheno
 
-##Remover cromossomos indesejados (0: unknown, 23: X, 24: Y, 25: XY homóloga, 26: mitocondrial)
-plink --bfile scz_imputado_updatesex_pheno --not-chr 0,23-26 --make-bed --keep-allele-order --out scz_imputado_updatesex_pheno_semxy
+#Atualizando fenotipo e sexo
+plink --bfile scz_imp_semindels --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-bed --out scz_imputado_sex_pheno
 
 #QC
-plink --bfile scz_imputado_updatesex_pheno_semxy --maf 0.01 --mind 0.01 --geno 0.05 --hwe 0.001 --make-bed --out scz_imputado_QC
+plink --bfile scz_imputado_sex_pheno --maf 0.01 --geno 0.05 --hwe 0.001 --make-bed --out scz_imputado_QC
 
 
 
