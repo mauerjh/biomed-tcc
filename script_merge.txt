@@ -1,0 +1,32 @@
+##########Juntar (merge) arquivos de diferentes pacientes/diferentes genotipagens (ultima atualizacao em 06_06_19)
+#PLINK v2.00a2LM 64-bit Intel (27 May 2019) 
+#bcftools Version: 1.4.1-1-gcdac3db (using htslib 1.4.1-1-g7771288)
+#VCFtools (0.1.15)
+# por Jessica Mauer
+
+#biallelic-only strict no vcf pos imput conversão vcf pra bed
+plink --vcf pepcontroles_esquizo_tept_teste_none.vcf.gz --biallelic-only strict --keep-allele-order --make-bed --out mergeteste
+#ou, plink2:
+~/Documents/Jessica/plink2 --vcf pepcontroles_esquizo_tept_teste.vcf.gz --max-alleles 2 --make-pgen --out merge_teste_biallelic
+
+
+ ~/Documents/Jessica/plink2 --pfile ptsd_imputado_QC_new --rm-dup exclude-mismatch --make-pgen --out ptsd_imputado_QC_semdup
+
+
+~/Documents/Jessica/plink2 --pfile pepcontroles_imputado_QC_semdup --export vcf --out pep_plink2
+bgzip -c ptsd_plink2.vcf > ptsd_plink2.vcf.gz 
+bcftools index PTSD_plink2.vcf.gz
+bcftools merge -Ov SCZ_plink2.vcf.gz PEP_plink2.vcf.gz PTSD_plink2.vcf.gz -o pep_scz_tept_merge.vcf
+
+assoc:
+./plink2 --bfile final2 --adjust --covar final2.eigenvec --covar-col-nums 3-6 --glm --out vcp
+
+cp qqplot_merge_valendo.png ./biomed-tcc/
+
+git add qqplot_merge_valendo.png
+
+git commit -m "Graficos merge scz pep tept"
+
+git push origin master
+
+
