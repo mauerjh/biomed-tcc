@@ -1,6 +1,6 @@
-﻿﻿#Script para controle de qualidade do TEPT junho 2019. Baseado nos parametros utilizados no broad institute
-#versao do plink
-#versao do r
+﻿﻿#Script para controle de qualidade de dados de genotipagem. Atualizado pela últtima vez em junho 2019.
+#PLINK v1.90b6.9 64-bit (4 Mar 2019)
+#R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
 #por Jessica Mauer
 
 #OPCIONAL: Adicionar fenótipo (para datasets em que a última coluna do .fam estiver -9, ou missing): em que phenotype_ptsd.txt é um arquivo texto com o FID, ID da amostra e fenótipo em 3 colunas respectivamente
@@ -48,7 +48,7 @@ abline(h=lower_3sd,col='red',lty=2)
 abline(v=log10(0.03),col='red',lty=2)
 dev.off()
 
-## create list of individuals to remove from data
+##Criar lista de indivíduos para remover
 imiss_rem <- subset(imiss,imiss$F_MISS > 0.03)[,1:2]
 het_rem <- subset(het,het$P_HET > upper_3sd | het$P_HET < lower_3sd)[,1:2]
 indiv_rem <- rbind(imiss_rem,het_rem)
@@ -66,7 +66,7 @@ plink --bfile ptsd_semhet --maf 0.01 --geno 0.05 --hwe 0.001 --make-bed --out pt
 #Separar a parte homóloga XY (baseado no hg 19 que é o pedido pelo Sanger Imputation)
 plink --bfile ptsd_genotype_QC --split-x b37 --make-bed --out ptsd_genotype_split
 
-### OBS: se o plink não deixar porque já existe um ‘XY’, fazer
+### OBS: se o plink não deixar porque já existe uma região ‘XY’, fazer
 plink --bfile ptsd_genotype_QC --merge-x --make-bed --out ptsd_genotype_merge
 plink --bfile ptsd_genotype_merge --split-x b37 --make-bed --out ptsd_genotype_split
 
@@ -74,8 +74,8 @@ plink --bfile ptsd_genotype_merge --split-x b37 --make-bed --out ptsd_genotype_s
 plink --bfile ptsd_genotype_split --check-sex --out ptsd_sexcheck
 
 #ver o no. de PROBLEM no arquivo .sexcheck
-#Abrir os outputs no R e plotar gráfico F statistic por sex label (dotchart(banco$sex)). Se quase todos os pontos masculinos estiverem agrupados à direita e os femininos mais separados à esquerda, está correta a distribuicao.
-#OBS: para o tept não excluí nenhum indivíduo pois deram apenas 3 indivíduos discordantes e a distribuição pelo gráfico estava adequada (indivíduos femininos discordantes estavam próximo do threshold 0.2)
+#Abrir os outputs no R e plotar gráfico F statistic por sex label (dotchart(banco$F)). Se quase todos os pontos masculinos estiverem agrupados à direita e os femininos mais separados à esquerda, está correta a distribuicao.
+#OBS: para o conjunto de dados tept não excluí nenhum indivíduo pois deram apenas 3 indivíduos discordantes e a distribuição pelo gráfico estava adequada (indivíduos femininos discordantes estavam próximo do threshold 0.2)
 
 #6) Remover cromossomos indesejados (0: unknown, 23: X, 24: Y, 25: XY homóloga, 26: mitocondrial)
 plink --bfile ptsd_genotype_QC --not-chr 0,23-26 --make-bed --keep-allele-order --out ptsd_genotype_QC_semXY
@@ -94,7 +94,7 @@ awk '{ print $3,$4 }' ibd_calculation.genome > individuosrelacionados.txt
 plink --bfile ptsd_genotype_QC_semXY --remove individuosrelacionados.txt --make-bed --out ptsd_QC_ibd
 
 #8) PCA
-plink --bfile ptsd_QC_ibd --pca var-wts --out ptsd_QC_pca 
+plink --bfile ptsd_QC_ibd --pca 4 --out ptsd_QC_pca 
 
 #9) Plot PCA
 
