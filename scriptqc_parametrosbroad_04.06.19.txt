@@ -1,0 +1,153 @@
+﻿﻿#Script para controle de qualidade do TEPT junho 2019. Baseado nos parametros utilizados no broad institute
+#versao do plink
+#versao do r
+#por Jessica Mauer
+
+#OPCIONAL: Adicionar fenótipo (para datasets em que a última coluna do .fam estiver -9, ou missing): em que phenotype_ptsd.txt é um arquivo texto com o FID, ID da amostra e fenótipo em 3 colunas respectivamente
+
+plink --bfile ptsd_genotype --pheno phenotype_ptsd.txt --pheno-merge --make-bed --out ptsd_phenotype
+
+#OPCIONAL Arrumar Family ID (caso o FID no .fam esteja diferente p/ cada indivíduo. o certo é ser 0 para todos) 
+awk '{print $1, $2, $3, $2}' ptsd_phenotype.fam > upd_fam.txt
+
+#conferir se a terceira coluna no upd_fam.txt é toda 0 e os ids na segunda e quarta coluna estão iguais, em seguida:
+plink --bfile ptsd_phenotype.fam --update-ids upd_fam.txt --make-bed --out ptsd_phenotype_fid
+
+#1) Remover indels e SNPs com mais de dois alelos
+
+plink --bfile ptsd_phenotype_fid --snps-only just-acgt --make-bed --out ptsd_semindels
+#caso não funcione, substituir just-acgt por no-DI, mas isso é um sinal de que a versão do plink está desatualizada
+
+#2) oservar parametros qc
+
+#Checar frequência do alelo raro
+plink --bfile ptsd_semindels --freq --out ptsd
+
+#Checar indivíduos / SNPs com falhas
+plink --bfile ptsd_semindels --missing --out ptsd #arquivo .imiss para indivíduos e .lmiss para SNPs
+
+#Checar Eq. de HW
+plink --bfile ptsd_semindels --hardy --out ptsd
+
+#Checar indivíduos heterozigotos
+plink --bfile ptsd_semindels --het --out ptsd
+
+#3)Excluir indivíduos outliers heterozigotos (medida de heterozigosidade >3 desvios padrão) e indivíduos que não estão genotipados >3% dos SNPS. R:
+
+imiss <- read.table('ptsd.imiss',h=T)
+het <- read.table('ptsd.het',h=T)
+het$P_HET <- (het$N.NM. - het$O.HOM.) / het$N.NM.
+upper_3sd <- mean(het$P_HET) + 3*sd(het$P_HET)
+lower_3sd <- mean(het$P_HET) - 3*sd(het$P_HET)
+pdf('imiss-vs-het.pdf')
+plot(log10(imiss$F_MISS),het$P_HET,xlab='log10(Proportion of missing genotypes)',ylab='Proportion Heterozygous',xlim=c(-4,0),ylim=c(0,0.5))
+axis(side=1,labels=F)
+mtext(xlabels,side=1,at=c(-4,-3,-2,-1,0),line=1)
+abline(h=upper_3sd,col='red',lty=2)
+abline(h=lower_3sd,col='red',lty=2)
+abline(v=log10(0.03),col='red',lty=2)
+dev.off()
+
+## create list of individuals to remove from data
+imiss_rem <- subset(imiss,imiss$F_MISS > 0.03)[,1:2]
+het_rem <- subset(het,het$P_HET > upper_3sd | het$P_HET < lower_3sd)[,1:2]
+indiv_rem <- rbind(imiss_rem,het_rem)
+write.table(indiv_rem,'fail-imisshet-qc.txt',col=F,row=F,quo=F,sep='\t')
+
+### Excluir de fato os individuos. linha de comando: 
+plink --bfile ptsd_semindels --remove fail-imisshet-qc.txt --make-bed --out ptsd_semhet
+
+#4) Filtros
+
+#filtrar MAF (frequência do menor alelo), GENO (taxa de SNPs n genotipados) e HWE (eq. Hardy-Weinberg)
+plink --bfile ptsd_semhet --maf 0.01 --geno 0.05 --hwe 0.001 --make-bed --out ptsd_genotype_QC
+
+#5) Sex-check
+#Separar a parte homóloga XY (baseado no hg 19 que é o pedido pelo Sanger Imputation)
+plink --bfile ptsd_genotype_QC --split-x b37 --make-bed --out ptsd_genotype_split
+
+### OBS: se o plink não deixar porque já existe um ‘XY’, fazer
+plink --bfile ptsd_genotype_QC --merge-x --make-bed --out ptsd_genotype_merge
+plink --bfile ptsd_genotype_merge --split-x b37 --make-bed --out ptsd_genotype_split
+
+#sexcheck de fato
+plink --bfile ptsd_genotype_split --check-sex --out ptsd_sexcheck
+
+#ver o no. de PROBLEM no arquivo .sexcheck
+#Abrir os outputs no R e plotar gráfico F statistic por sex label (dotchart(banco$sex)). Se quase todos os pontos masculinos estiverem agrupados à direita e os femininos mais separados à esquerda, está correta a distribuicao.
+#OBS: para o tept não excluí nenhum indivíduo pois deram apenas 3 indivíduos discordantes e a distribuição pelo gráfico estava adequada (indivíduos femininos discordantes estavam próximo do threshold 0.2)
+
+#6) Remover cromossomos indesejados (0: unknown, 23: X, 24: Y, 25: XY homóloga, 26: mitocondrial)
+plink --bfile ptsd_genotype_QC --not-chr 0,23-26 --make-bed --keep-allele-order --out ptsd_genotype_QC_semXY
+
+#7) IBD: gera o arquivo ibd_calculation.genome, que contém o cálculo IBD
+
+plink --bfile ptsd_genotype_QC_semXY --genome --min 0.125 --out ibd_calculation
+
+#olhar o arquivo ibd_calculation.genome e ver qual coluna tem a maior qtd. de individuos repetidos, separar essa para excluir: selecionar colunas FID1 e IID1 OU FID2 e IID2
+
+awk '{ print $3,$4 }' ibd_calculation.genome > individuosrelacionados.txt 
+
+#ou awk '{ print $1,$2 }' ibd_calculation.genome > individuosrelacionados.txt
+
+#excluir os indivíduos com compartilhamento genetico
+plink --bfile ptsd_genotype_QC_semXY --remove individuosrelacionados.txt --make-bed --out ptsd_QC_ibd
+
+#8) PCA
+plink --bfile ptsd_QC_ibd --pca var-wts --out ptsd_QC_pca 
+
+#9) Plot PCA
+
+#No RStudio:
+dados_pca <-  read.table( "ptsd_QC_pca.eigenvec" )
+colnames(dados_pca)[3:7] = c( "PC1","PC2","PC3","PC4","PC5" )
+plot( dados_pca[,3], dados_pca[,4], xlab = "PC1", ylab = "PC2" )
+pairs(dados_pca[, 3:7])
+
+# pelo ggplot2 
+library(ggplot2)
+ggplot(data=dados_pca, aes(x=dados_pca$PC1, y=dados_pca$PC2)) + geom_point(shape=19, alpha=0.4, size=3)
+
+### OPCIONAL - GRAFICOS
+#Plotar histogramas dos valores anteriores: no Rstudio:
+library(ggplot2)
+library(grid)
+library(xtable)
+
+erro_variante <- read.table("ptsd.lmiss", header = T)
+erro_individuos <- read.table("ptsd.imiss", header = T)
+frequencia_geno <- read.table("ptsd.frq", header = T)
+heterozigotos <- read.table("ptsd.het", header = T)
+hardyweinberg <- read.table("ptsd.hwe", header = T)
+
+#Frequência do alelo raro (MAF):
+pdf("plot_MAF.pdf")
+hist(frequencia_geno$MAF, n=1000, main="MAF", xlab= "Frequência do alelo raro", ylab= "nº de SNPs", col= "lightpink4")
+hist(frequencia_geno$MAF, n=1000, main="MAF<0.1", xlim=c(0,0.1), xlab= "Frequência do alelo raro", ylab= "nº de SNPs", col= "lightpink4")
+hist(frequencia_geno$MAF, n=1000, main="MAF<0.05", xlim=c(0,0.05), xlab= "Frequência do alelo raro", ylab= "nº de SNPs", col= "lightpink4")
+hist(frequencia_geno$MAF, n=1000, main="MAF<0.01", xlim=c(0,0.01), xlab= "Frequência do alelo raro", ylab= "nº de SNPs", col= "lightpink4")
+dev.off()
+
+#Frequência de individual missingness
+pdf("plot_imiss.pdf")
+hist(erro_individuos$F_MISS, n=1000, main="Individual missingness <0.001", col= "lightpink4",  ylab= "nº de pessoas", xlab= "% de SNPs não genotipados")
+hist(erro_individuos$F_MISS, n=1000, main="Individual missingness <0.2", xlim=c(0,0.2), col= "lightpink4", ylab= "nº de pessoas", xlab= "% de SNPs não genotipados")
+hist(erro_individuos$F_MISS, n=1000, main="Individual missingness <0.1", xlim=c(0,0.1), col= "lightpink4", ylab= "nº de pessoas", xlab= "% de SNPs não genotipados")
+hist(erro_individuos$F_MISS, n=1000, main="Individual missingness <0.02", xlim=c(0,0.02), col= "lightpink4", ylab= "nº de pessoas", xlab= "% de SNPs não genotipados")
+dev.off()
+
+#Frequência de locus missingness
+pdf("plot_lmiss.pdf")
+hist(erro_variante$F_MISS, n=100, main="Locus missingness", col= "lightpink4", xlab= "% de pessoas", ylab= "nº de SNPs")
+hist(erro_variante$F_MISS, n=100, main="Locus missingness <0.2", xlim=c(0,0.2), col= "lightpink4", xlab= "% de pessoas", ylab= "nº de SNPs")
+hist(erro_variante$F_MISS, n=100, main="Locus missingness <0.1", xlim=c(0,0.1), col= "lightpink4", xlab= "% de pessoas", ylab= "nº de SNPs")
+hist(erro_variante$F_MISS, n=100, main="Locus missingness <0.02", xlim=c(0,0.02), col= "lightpink4", xlab= "% de pessoas", ylab= "nº de SNPs")
+dev.off()
+
+#P-valor associado ao HWE
+pdf("plot_hwe.pdf")
+hist(-log10(hardyweinberg$P), n=1000, main="Equilíbrio de Hardy-Weinberg", col= "lightpink4", xlab = "-log10(P)", ylab="nºde SNPs")
+hist(-log10(hardyweinberg$P), n=1000, main="Equilíbrio de Hardy-Weinberg p>10^-10", xlim=c(0,10), col= "lightpink4", xlab = "-log10(P)", ylab="nºde SNPs")
+hist(-log10(hardyweinberg$P), n=1000, main="Equilíbrio de Hardy-Weinberg p>10^-5", xlim=c(0,5), col= "lightpink4", xlab = "-log10(P)", ylab="nºde SNPs")
+dev.off()
+

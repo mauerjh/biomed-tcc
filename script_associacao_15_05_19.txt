@@ -1,0 +1,42 @@
+#TESTE DE ASSOCIAÇAO
+
+#associacao bruta gera arquivo .assoc e o .assoc_adjusted que contém os dados + correção para múltiplos testes
+plink --bfile scz_pep_controles --assoc --adjust --out assoc_scz_bruta
+
+#Fazer associação mais robusta (reg logística), corrigindo para múltiplas comparações e também para o PCA
+
+plink --bfile scz_pep_controles--logistic --adjust --covar scz_pca.eigenvec --covar-number 2-5 --out assoc_scz_logistic
+
+#Selecionar do arquivo gerado, somente as linhas que tenham os resultados dos SNPs 
+
+egrep 'SNP|ADD' assoc_scz_logistic.assoc.logistic > assoc_scz_logistic_SNPs.assoc.logistic
+
+#GRÁFICOS - R
+
+# pacotes necessarios
+
+library(dplyr)
+library(qqman) 
+
+#QQ  Plot
+
+bruto <- read.table("assoc_scz_bruta.assoc", header=T)
+corrigido <- read.table("assoc_scz_logistic_SNPs.assoc.logistic", header=T)
+
+#Q-Q plot dos dados brutos
+
+pdf("qqplot_brutos.pdf")
+qq(bruto$P)
+dev.off()
+
+#Q-Q plot dos dados corrigidos e salvar no arquivo 
+
+pdf("qqplot_corrigidos.pdf")
+qq(corrigido$P)
+dev.off()
+
+#Manhattan plot
+pdf("manhattan_corrigido_P.pdf")
+manhattan(corrigido, main = “titulo”, col = c(“aquamarine2”, “aquamarine4”), cex.axis = 0.8)
+dev.off()
+
