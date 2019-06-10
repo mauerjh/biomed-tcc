@@ -13,7 +13,20 @@ bcftools merge -Ov scz_plink2.vcf.gz pep_plink2.vcf.gz ptsd_plink2.vcf.gz -o pep
 
 ############ Controle de qualidade pós-merge
 #1) Filtros
-plink2 --vcf pep_scz_tept_merge.vcf --maf 0.01 --geno 0.05 --hwe 0.001 --make-pgen --out pep_scz_tept_merge_filtros
+plink2 --vcf pep_scz_tept_merge.vcf --max-alleles-2 --maf 0.01 --geno 0.05 --hwe 0.001 --make-pgen --out pep_scz_tept_merge_filtros
+
+#2) Sem indels
+plink2 --pfile pep_scz_tept_merge_filtros --snps-only just-acgt --make-bed --out pep_scz_tept_merge_semindels
+
+#2) Atualizar sexo e fenótipo
+#Fazendo arquivo updatesex:
+awk '{print $1, $2, $5}' SCZ_QC_ibd.fam > upd_sex_scz.txt
+
+#Fazendo arquivo fenotipo
+awk '{print $1, $2, $6}' SCZ_QC_ibd.fam > upd_pheno_scz.txt
+
+#Atualizando fenotipo e sexo
+plink --bfile scz_imp_semindels --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-bed --out scz_imputado_sex_pheno
 
 #2) Individual missingness x heterozigozity
 plink2 --pfile pep_scz_tept_merge_filtros --missing --het --out merge
@@ -33,8 +46,8 @@ plink2 --pfile pep_scz_tept_merge_filtros --remove fail-imisshet-qc.txt --make-p
 
 #3) Exclusão de individuos c/ compartilhamento genético: IBD
 plink2 --pfile pep_scz_tept_merge_filtros_semhet --indep-pairwise 50 5 0.2 --out merge_pruning
-plink2 --pfile pep_scz_tept_merge_filtros_semhet --extract merge_pruning.prune.in --genome --min 0.125 --out ibd_calculation
-awk '{ print $1,$2 }' ibd_calculation.genome > individuosrelacionados.txt 
+plink2 --pfile pep_scz_tept_merge_filtros_semhet --extract merge_pruning.prune.in --genome --min 0.3 --out ibd_calculation
+awk '{ print $3,$4 }' ibd_calculation.genome > individuosrelacionados.txt 
 plink2 --pfile pep_scz_tept_merge_filtros_semhet --remove individuosrelacionados.txt --make-pgen --out pep_scz_tept_merge_QCfinal
 
 #4) PCA
