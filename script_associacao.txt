@@ -12,13 +12,13 @@ plink2 --bfile pep_scz_tept_merge_QCfinal --adjust --covar pepscztept_pca --cova
 
 #Selecionar do arquivo gerado o cabeçalho + linhas que tenham os resultados dos SNPs (coluna TEST = ADD)
 
-egrep '#|ADD' assoc_pep_scz_tept.PHENO1.assoc.logistic > assoc_SNPs.PHENO1.assoc.logistic
-egrep '#|ADD' assoc_bruta_pepscztept.PHENO1.assoc.logistic > assoc_bruta_SNPs.PHENO1.assoc.logistic
+egrep '#|ADD' assoc_pep_scz_tept.PHENO1.glm.logistic > assoc_SNPs.PHENO1.glm.logistic
+egrep '#|ADD' assoc_bruta_pepscztept.PHENO1.glm.logistic > assoc_bruta_SNPs.PHENO1.glm.logistic
 
 #####GRÁFICOS - R#####
 #importar o arquivo
-corrigido <- read.table("assoc_SNPs.PHENO1.assoc.logistic", header = T, comment.char = "@")
-bruto <-  read.table("assoc_bruta_SNPs.PHENO1.assoc.logistic", header = T, comment.char = "@")
+corrigido <- read.table("assoc_SNPs.PHENO1.glm.logistic", header = T, comment.char = "@")
+bruto <-  read.table("assoc_bruta_SNPs.PHENO1.glm.logistic", header = T, comment.char = "@")
 
 #renomear colunas
 names(corrigido)[1] <- "CHR"
