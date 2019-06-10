@@ -8,7 +8,7 @@ plink2 --pfile final2 --glm --out assoc_bruta_pepscztept
 
 #Associação corrigindo para múltiplas comparações e também para os 4 primeiros PCs
 
-plink2 --bfile pep_scz_tept_merge_QCfinal --adjust --covar pepscztept_pca --covar-col-nums 3-6 --glm --out assoc_pep_scz_tept
+plink2 --bfile pep_scz_tept_merge_QCfinal --adjust --covar pepscztept_pca.eigenvec --covar-col-nums 3-6 --glm --out assoc_pep_scz_tept
 
 #Selecionar do arquivo gerado o cabeçalho + linhas que tenham os resultados dos SNPs (coluna TEST = ADD)
 
