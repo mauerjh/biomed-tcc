@@ -1,54 +1,86 @@
-##########Juntar (merge) arquivos de diferentes pacientes/diferentes genotipagens (ultima atualizacao em 09_06_19)
-#PLINK v2.00a2LM 64-bit Intel (27 May 2019) 
-#bcftools Version: 1.4.1-1-gcdac3db (using htslib 1.4.1-1-g7771288)
-#VCFtools (0.1.15)
-# por Jessica Mauer
+########################################################################
+# Script para compilar (merge) arquivos de diferentes genotipagens (pacientes diferentes)
+# Jessica Mauer
+# Data: 15/06/2019
+# PLINK v2.00a2LM 64-bit Intel (27 May 2019) 
+# PLINK v1.90b6.9 64-bit (4 Mar 2019)  
+# bcftools Version: 1.4.1-1-gcdac3db (using htslib 1.4.1-1-g7771288)
+# Importante: esse script utiliza o plink 1.9 e o 2.0, baixar os executáveis em uma pasta.
+# Input: arquivos plink2 apos QC pós-imputação (.pgen .psam .pvar) que deseja juntar
+# Output: arquivo plink2 (.pgen .psam .pvar) com os arquivos compilados e QC + gráfico individual missing x heterozigozity
+########################################################################
 
 # Partindo dos arquivos saídos do controle de qualidade pós-imputação, remover SNPs duplicados no dataset (rs ids duplicados são provavelmente variantes trialélicas)
-plink2 --pfile ptsd_imputado_QC_new --rm-dup exclude-mismatch --make-pgen --out ptsd_imputado_QC_semdup
-plink2 --pfile ptsd_imputado_QC_semdup --export vcf --out ptsd_plink2
-bgzip -c ptsd_plink2.vcf > ptsd_plink2.vcf.gz 
-bcftools index ptsd_plink2.vcf.gz
-bcftools merge -Ov scz_plink2.vcf.gz pep_plink2.vcf.gz ptsd_plink2.vcf.gz -o pep_scz_tept_merge.vcf
+# Fazer os proximos comandos para todos os datasets que se deseja fazer merge
+plink2 --pfile dataset1 --rm-dup exclude-mismatch --make-pgen --out dataset1_semdup
+plink2 --pfile dataset1_semdup --export vcf --out dataset1_semdup
+bgzip -c dataset1_semdup.vcf > dataset1_semdup.vcf.gz 
+bcftools index dataset1_semdup.vcf.gz
 
-############ Controle de qualidade pós-merge
+# Juntar os arquivos
+bcftools merge -Ov dataset1_semdup.vcf.gz dataset2_semdup.vcf.gz dataset3_semdup.vcf.gz -o merge.vcf
+
+############ Controle de qualidade pós-merge ##############
+
 #1) Filtros
-plink2 --vcf pep_scz_tept_merge.vcf --max-alleles-2 --maf 0.01 --geno 0.05 --hwe 0.001 --make-pgen --out pep_scz_tept_merge_filtros
+plink2 --vcf merge.vcf --max-alleles 2 --maf 0.01 --geno 0.1 --hwe 0.001 --make-pgen --out merge_filtros
 
 #2) Sem indels
-plink2 --pfile pep_scz_tept_merge_filtros --snps-only just-acgt --make-bed --out pep_scz_tept_merge_semindels
+plink2 --pfile merge_filtros --snps-only just-acgt --make-bed --out merge_filtros_semindels
 
-#2) Atualizar sexo e fenótipo
+#3) Atualizar sexo e fenótipo
+# Converter para plink 1.9
+plink2 --pfile merge_filtros_semindels --make-bed --out merge_filtros_semindels	
+
+#Fazendo arquivo update base:
+cat dataset1.fam > upd_base_merge.txt
+cat dataset2.fam >> upd_base_merge.txt
+cat dataset3.fam >> upd_base_merge.txt
+
 #Fazendo arquivo updatesex:
-awk '{print $1, $2, $5}' SCZ_QC_ibd.fam > upd_sex_scz.txt
+awk '{print $1, $2, $5}' upd_base_merge.txt > upd_sex.txt
 
 #Fazendo arquivo fenotipo
-awk '{print $1, $2, $6}' SCZ_QC_ibd.fam > upd_pheno_scz.txt
+awk '{print $1, $2, $6}' upd_base_merge.txt > upd_pheno.txt
 
 #Atualizando fenotipo e sexo
-plink --bfile scz_imp_semindels --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-bed --out scz_imputado_sex_pheno
+plink --bfile merge_filtros_semindels --update-sex upd_sex.txt --pheno upd_pheno.txt --make-bed --out merge_update_sex_pheno
 
-#2) Individual missingness x heterozigozity
-plink2 --pfile pep_scz_tept_merge_filtros --missing --het --out merge
-#R:
-imiss <- read.table('merge.imiss',h=T)
-het <- read.table('merge.het',h=T)
+#4)Excluir indivíduos outliers heterozigotos (heterozigosidade >3 desvios padrão) e indivíduos que não estão genotipados >3% dos SNPS
+plink --bfile merge_update_sex_pheno --missing --out indiv_missing
+plink --bfile merge_update_sex_pheno --het --out hetero
+
+# R:
+#importar dados
+imiss <- read.table('indiv_missing.imiss',h=T)
+het <- read.table('hetero.het',h=T)
 het$P_HET <- (het$N.NM. - het$O.HOM.) / het$N.NM.
 upper_3sd <- mean(het$P_HET) + 3*sd(het$P_HET)
 lower_3sd <- mean(het$P_HET) - 3*sd(het$P_HET)
+
+#grafico
+
+pdf('imiss-vs-het.pdf')
+plot(log10(imiss$F_MISS),het$P_HET,xlab='log10(Proportion of missing genotypes)',ylab='Proportion Heterozygous',xlim=c(-4,0),ylim=c(0,0.5))
+axis(side=1,labels=F)
+mtext(xlabels,side=1,at=c(-4,-3,-2,-1,0),line=1)
+abline(h=upper_3sd,col='red',lty=2)
+abline(h=lower_3sd,col='red',lty=2)
+abline(v=log10(0.03),col='red',lty=2)
+dev.off()
+
+##Criar lista de indivíduos para remover
 imiss_rem <- subset(imiss,imiss$F_MISS > 0.03)[,1:2]
 het_rem <- subset(het,het$P_HET > upper_3sd | het$P_HET < lower_3sd)[,1:2]
 indiv_rem <- rbind(imiss_rem,het_rem)
 write.table(indiv_rem,'fail-imisshet-qc.txt',col=F,row=F,quo=F,sep='\t')
 
-#linha de comando: 
-plink2 --pfile pep_scz_tept_merge_filtros --remove fail-imisshet-qc.txt --make-pgen --out pep_scz_tept_merge_filtros_semhet
+#Removendo indivíduos outliers. linha de comando: 
+plink --bfile merge_update_sex_pheno --remove fail-imisshet-qc.txt --make-bed --out merge_semhet
 
-#3) Exclusão de individuos c/ compartilhamento genético: IBD
-plink2 --pfile pep_scz_tept_merge_filtros_semhet --indep-pairwise 50 5 0.2 --out merge_pruning
-plink2 --pfile pep_scz_tept_merge_filtros_semhet --extract merge_pruning.prune.in --genome --min 0.3 --out ibd_calculation
+#5) Exclusão de individuos c/ compartilhamento genético: IBD
+plink --bfile merge_semhet --indep-pairwise 50 5 0.2 --out merge_pruning
+plink --bfile merge_semhet --extract merge_pruning.prune.in --genome --min 0.3 --out ibd_calculation 
 awk '{ print $3,$4 }' ibd_calculation.genome > individuosrelacionados.txt 
-plink2 --pfile pep_scz_tept_merge_filtros_semhet --remove individuosrelacionados.txt --make-pgen --out pep_scz_tept_merge_QCfinal
+plink --bfile merge_semhet --remove individuosrelacionados.txt --make-bed --out merge_qcfinal
 
-#4) PCA
-plink2 --pfile pep_scz_tept_merge_QCfinal --pca 4 --out pepscztept_pca 
