@@ -21,7 +21,7 @@ plink --bfile ptsd_phenotype_fid --snps-only just-acgt --make-bed --out ptsd_sem
 #2) Filtros
 
 #filtrar MAF (frequência do menor alelo), GENO (taxa de SNPs n genotipados) e HWE (eq. Hardy-Weinberg)
-plink --bfile ptsd_semindels --maf 0.01 --geno 0.05 --hwe 0.001 --make-bed --out ptsd_genotype_QC
+plink --bfile ptsd_semindels --maf 0.01 --geno 0.05 --hwe 0.000001 --make-bed --out ptsd_genotype_QC
 
 #3) Sex-check
 #Separar a parte homóloga XY (baseado no hg 19 que é o pedido pelo Sanger Imputation)
