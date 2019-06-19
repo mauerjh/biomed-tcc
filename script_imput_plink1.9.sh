@@ -60,6 +60,9 @@ plink --vcf scz_imp_bruta.vcf.gz --biallelic-only strict --keep-allele-order --m
 #Remover indels 
 plink --bfile scz_imp --snps-only just-acgt --make-bed --out scz_imp_semindels
 
+#Remover SNPs duplicadas
+plink2 --bfile scz_imp_semindels --rm-dups exclude-all list --make-bed --out scz_imp_semduplicatas
+
 #Fazendo arquivo updatesex:
 awk '{print $1, $2, $5}' SCZ_QC_ibd.fam > upd_sex_scz.txt
 
@@ -67,7 +70,7 @@ awk '{print $1, $2, $5}' SCZ_QC_ibd.fam > upd_sex_scz.txt
 awk '{print $1, $2, $6}' SCZ_QC_ibd.fam > upd_pheno_scz.txt
 
 #Atualizando fenotipo e sexo
-plink --bfile scz_imp_semindels --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-bed --out scz_imputado_sex_pheno
+plink --bfile scz_imp_semduplicatas --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-bed --out scz_imputado_sex_pheno
 
 #QC
 plink --bfile scz_imputado_sex_pheno --maf 0.01 --geno 0.05 --hwe 0.001 --make-bed --out scz_imputado_QC
