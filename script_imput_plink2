@@ -81,7 +81,7 @@ awk '{print $2, $6}' SCZ_imput.psam > upd_pheno_scz.txt
 plink2 --pfile scz_imp_semindels --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-pgen --out scz_imputado_sex_pheno
 
 #QC
-plink2 --pfile scz_imputado_sex_pheno --maf 0.01 --mind 0.01 --geno 0.05 --hwe 0.001 --make-pgen --out scz_imputado_QC
+plink2 --pfile scz_imputado_sex_pheno --maf 0.01 --mind 0.1 --geno 0.1 --hwe 0.000001 --make-pgen --out scz_imputado_QC
 
 
 
