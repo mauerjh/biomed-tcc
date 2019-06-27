@@ -21,7 +21,7 @@ plink --bfile ptsd_phenotype_fid --snps-only just-acgt --make-bed --out ptsd_sem
 #2) Filtros
 
 #filtrar MAF (frequência do menor alelo), GENO (taxa de SNPs n genotipados) e HWE (eq. Hardy-Weinberg)
-plink --bfile ptsd_semindels --maf 0.01 --geno 0.1 --hwe 0.000001 --make-bed --out ptsd_genotype_QC
+plink --bfile ptsd_semindels --maf 0.05 --geno 0.1 --hwe 0.000001 --make-bed --out ptsd_genotype_QC
 plink --bfile ptsd_genotype_QC --mind 0.1 --make-bed --out ptsd_genotype_QC_mind
 
 #3) Sex-check
