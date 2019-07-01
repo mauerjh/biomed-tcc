@@ -13,7 +13,7 @@ plink2 --bfile SCZ_QC_ibd --make-pgen --out SCZ_imput
 plink2 --pfile SCZ_imput --export vcf --out SCZ_imput_vcf
 
 #stats:
-bcftools +fixref SCZ_imput_vcf -- -f human_g1k_v37.fasta
+bcftools +fixref SCZ_imput_vcf.vcf -- -f human_g1k_v37.fasta
 
 #correçao alelo referencia com base no fasta b37/hg19
 bcftools +fixref SCZ_imput_vcf -Ov -o SCZ_paraimputar_strandflip.vcf -- -d -f human_g1k_v37.fasta -m flip
