@@ -68,6 +68,9 @@ bcftools concat -Oz 1filter.vcf.gz 2filter.vcf.gz 3filter.vcf.gz 4filter.vcf.gz 
 #Converter para plink2 format (pgen, pvar, psam)
 plink2 --vcf scz_imp_bruta.vcf.gz --make-pgen --out scz_imp
 
+#Remover SNPs duplicadas
+plink2 --bfile scz_imp_semindels --rm-dups exclude-all list --make-bed --out scz_imp_semduplicatas
+
 #Remover indels 
 plink2 --pfile scz_imp --snps-only just-acgt --make-pgen --out scz_imp_semindels
 
