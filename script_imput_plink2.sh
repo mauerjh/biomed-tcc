@@ -24,6 +24,8 @@ vcf-sort SCZ_paraimputar_strandflip.vcf | bgzip -c > vcfSCZ_fimSanger.vcf.gz
 #########################
 
 #######PARA SANGER#######
+#Filtrar variantes por MAF
+
 vi filterCHR1-8
 i
 bcftools filter 1.vcf.gz -e'MAF<0.01' -Oz -o 1filter.vcf.gz
@@ -62,8 +64,48 @@ ESC
 chmod 755 ./filterCHR9-22
 nohup ./filterCHR9-22 &
 
+#Filtrar variantes por qualidade da imputação (info score)
+
+vi filterINFO1-8
+i
+bcftools filter 1filter.vcf.gz -e 'INFO<0.8' -Oz -o 1filterinfo.vcf.gz
+bcftools filter 2filter.vcf.gz -e 'INFO<0.8' -Oz -o 2filterinfo.vcf.gz
+bcftools filter 3filter.vcf.gz -e 'INFO<0.8' -Oz -o 3filterinfo.vcf.gz
+bcftools filter 4filter.vcf.gz -e 'INFO<0.8' -Oz -o 4filterinfo.vcf.gz
+bcftools filter 5filter.vcf.gz -e 'INFO<0.8' -Oz -o 5filterinfo.vcf.gz
+bcftools filter 6filter.vcf.gz -e 'INFO<0.8' -Oz -o 6filterinfo.vcf.gz
+bcftools filter 7filter.vcf.gz -e 'INFO<0.8' -Oz -o 7filterinfo.vcf.gz
+bcftools filter 8filter.vcf.gz -e 'INFO<0.8' -Oz -o 8filterinfo.vcf.gz
+ESC
+:x
+
+chmod 755 ./filterINFO1-8
+nohup ./filterINFO1-8 &
+
+vi filterINFO9-22
+i
+bcftools filter 9filter.vcf.gz -e 'INFO<0.8' -Oz -o 9filterinfo.vcf.gz
+bcftools filter 10filter.vcf.gz -e 'INFO<0.8' -Oz -o 10filterinfo.vcf.gz
+bcftools filter 11filter.vcf.gz -e 'INFO<0.8' -Oz -o 11filterinfo.vcf.gz
+bcftools filter 12filter.vcf.gz -e 'INFO<0.8' -Oz -o 12filterinfo.vcf.gz
+bcftools filter 13filter.vcf.gz -e 'INFO<0.8' -Oz -o 13filterinfo.vcf.gz
+bcftools filter 14filter.vcf.gz -e 'INFO<0.8' -Oz -o 14filterinfo.vcf.gz
+bcftools filter 15filter.vcf.gz -e 'INFO<0.8' -Oz -o 15filterinfo.vcf.gz
+bcftools filter 16filter.vcf.gz -e 'INFO<0.8' -Oz -o 16filterinfo.vcf.gz
+bcftools filter 17filter.vcf.gz -e 'INFO<0.8' -Oz -o 17filterinfo.vcf.gz
+bcftools filter 18filter.vcf.gz -e 'INFO<0.8' -Oz -o 18filterinfo.vcf.gz
+bcftools filter 19filter.vcf.gz -e 'INFO<0.8' -Oz -o 19filterinfo.vcf.gz
+bcftools filter 20filter.vcf.gz -e 'INFO<0.8' -Oz -o 20filterinfo.vcf.gz
+bcftools filter 21filter.vcf.gz -e 'INFO<0.8' -Oz -o 21filterinfo.vcf.gz
+bcftools filter 22filter.vcf.gz -e 'INFO<0.8' -Oz -o 22filterinfo.vcf.gz
+ESC
+:x
+
+chmod 755 ./filterINFO9-22
+nohup ./filterINFO9-22 &
+
 #juntando arquivos
-bcftools concat -Oz 1filter.vcf.gz 2filter.vcf.gz 3filter.vcf.gz 4filter.vcf.gz 5filter.vcf.gz 6filter.vcf.gz 7filter.vcf.gz 8filter.vcf.gz 9filter.vcf.gz 10filter.vcf.gz 11filter.vcf.gz 12filter.vcf.gz 13filter.vcf.gz 14filter.vcf.gz 15filter.vcf.gz 16filter.vcf.gz 17filter.vcf.gz 18filter.vcf.gz 19filter.vcf.gz 20filter.vcf.gz 21filter.vcf.gz 22filter.vcf.gz -o scz_imp_bruta.vcf.gz
+bcftools concat -Oz 1filterinfo.vcf.gz 2filterinfo.vcf.gz 3filterinfo.vcf.gz 4filterinfo.vcf.gz 5filterinfo.vcf.gz 6filterinfo.vcf.gz 7filterinfo.vcf.gz 8filterinfo.vcf.gz 9filterinfo.vcf.gz 10filterinfo.vcf.gz 11filterinfo.vcf.gz 12filterinfo.vcf.gz 13filterinfo.vcf.gz 14filterinfo.vcf.gz 15filterinfo.vcf.gz 16filterinfo.vcf.gz 17filterinfo.vcf.gz 18filterinfo.vcf.gz 19filterinfo.vcf.gz 20filterinfo.vcf.gz 21filterinfo.vcf.gz 22filterinfo.vcf.gz -o imp_bruta.vcf.gz
 
 #Converter para plink2 format (pgen, pvar, psam)
 plink2 --vcf scz_imp_bruta.vcf.gz --make-pgen --out scz_imp
