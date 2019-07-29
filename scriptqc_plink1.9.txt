@@ -11,7 +11,7 @@ plink --bfile ptsd_genotype --pheno phenotype_ptsd.txt --pheno-merge --make-bed 
 awk '{print $1, $2, $3, $2}' ptsd_phenotype.fam > upd_fam.txt
 
 #conferir se a terceira coluna no upd_fam.txt é toda 0 e os ids na segunda e quarta coluna estão iguais, em seguida:
-plink --bfile ptsd_phenotype.fam --update-ids upd_fam.txt --make-bed --out ptsd_phenotype_fid
+plink --bfile ptsd_phenotype --update-ids upd_fam.txt --make-bed --out ptsd_phenotype_fid
 
 #1) Remover indels e SNPs com mais de dois alelos
 
@@ -21,7 +21,7 @@ plink --bfile ptsd_phenotype_fid --snps-only just-acgt --make-bed --out ptsd_sem
 #2) Filtros
 
 #filtrar MAF (frequência do menor alelo), GENO (taxa de SNPs n genotipados) e HWE (eq. Hardy-Weinberg)
-plink --bfile ptsd_semindels --maf 0.05 --geno 0.1 --hwe 0.000001 --make-bed --out ptsd_genotype_QC
+plink --bfile ptsd_semindels --maf 0.01 --geno 0.1 --hwe 0.000001 --make-bed --out ptsd_genotype_QC
 plink --bfile ptsd_genotype_QC --mind 0.1 --make-bed --out ptsd_genotype_QC_mind
 
 #3) Sex-check
@@ -40,7 +40,7 @@ plink --bfile ptsd_genotype_split --check-sex --out ptsd_sexcheck
 #OBS: para o conjunto de dados tept não excluí nenhum indivíduo pois deram apenas 3 indivíduos discordantes e a distribuição pelo gráfico estava adequada (indivíduos femininos discordantes estavam próximo do threshold 0.2)
 
 #4) Remover cromossomos indesejados (0: unknown, 23: X, 24: Y, 25: XY homóloga, 26: mitocondrial)
-plink --bfile ptsd_genotype_QC --not-chr 0,23-26 --make-bed --keep-allele-order --out ptsd_genotype_QC_semXY
+plink --bfile ptsd_genotype_QC_mind --not-chr 0,23-26 --make-bed --keep-allele-order --out ptsd_genotype_QC_semXY
 
 #5)Excluir indivíduos outliers heterozigotos (heterozigosidade >3 desvios padrão) e indivíduos que não estão genotipados >3% dos SNPS
 plink --bfile ptsd_genotype_QC_semXY --missing --out indiv_missing
