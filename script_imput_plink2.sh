@@ -1,4 +1,4 @@
-##########Pré e pós imputação Sanger (ultima atualizacao em 06_06_19)
+##########Pré e pós imputação Sanger (ultima atualizacao em 29_07_19)
 #PLINK v2.00a2LM 64-bit Intel (27 May 2019) 
 #bcftools Version: 1.4.1-1-gcdac3db (using htslib 1.4.1-1-g7771288)
 #VCFtools (0.1.15)
@@ -6,18 +6,18 @@
 
 ############PARA SANGER#############
 
-# para arquivos saídos do qc feito em plink 1.9:
-plink2 --bfile SCZ_QC_ibd --make-pgen --out SCZ_imput
+# para arquivos saídos do qc feito em plink 1.9, fazer essa etapa antes:
+plink2 --bfile arquivo_QC --make-pgen --out arquivo_imput
 
 ## para arquivos saídos do qc feito em plink 2.0, começar aqui:
-plink2 --pfile SCZ_imput --export vcf --out SCZ_imput_vcf
+plink2 --pfile arquivo_imput --export vcf --out arquivo_imput_vcf
 
 #stats:
-bcftools +fixref SCZ_imput_vcf.vcf -- -f human_g1k_v37.fasta
+bcftools +fixref arquivo_imput_vcf.vcf -- -f human_g1k_v37.fasta
 
 #correçao alelo referencia com base no fasta b37/hg19
-bcftools +fixref SCZ_imput_vcf.vcf -Ov -o SCZ_paraimputar_strandflip.vcf -- -d -f human_g1k_v37.fasta -m flip
-vcf-sort SCZ_paraimputar_strandflip.vcf | bgzip -c > vcfSCZ_fimSanger.vcf.gz
+bcftools +fixref arquivo_imput_vcf.vcf -Ov -o arquivo_paraimputar_strandflip.vcf -- -d -f human_g1k_v37.fasta -m flip
+vcf-sort arquivo_paraimputar_strandflip.vcf | bgzip -c > vcf_fimSanger.vcf.gz
 
 #########################
 #### POST IMPUTATION ####
