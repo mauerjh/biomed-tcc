@@ -108,25 +108,26 @@ nohup ./filterINFO9-22 &
 bcftools concat -Oz 1filterinfo.vcf.gz 2filterinfo.vcf.gz 3filterinfo.vcf.gz 4filterinfo.vcf.gz 5filterinfo.vcf.gz 6filterinfo.vcf.gz 7filterinfo.vcf.gz 8filterinfo.vcf.gz 9filterinfo.vcf.gz 10filterinfo.vcf.gz 11filterinfo.vcf.gz 12filterinfo.vcf.gz 13filterinfo.vcf.gz 14filterinfo.vcf.gz 15filterinfo.vcf.gz 16filterinfo.vcf.gz 17filterinfo.vcf.gz 18filterinfo.vcf.gz 19filterinfo.vcf.gz 20filterinfo.vcf.gz 21filterinfo.vcf.gz 22filterinfo.vcf.gz -o imp_bruta.vcf.gz
 
 #Converter para plink2 format (pgen, pvar, psam)
-plink2 --vcf scz_imp_bruta.vcf.gz --make-pgen --out scz_imp
+plink2 --vcf imp_bruta.vcf.gz --make-pgen --out imputacao_bruta
 
 #Remover SNPs duplicadas
-plink2 --bfile scz_imp_semindels --rm-dups exclude-all list --make-bed --out scz_imp_semduplicatas
+plink2 --pfile imputacao_bruta --rm-dup exclude-all list --make-pgen --out imp_semduplicatas
 
 #Remover indels 
-plink2 --pfile scz_imp --snps-only just-acgt --make-pgen --out scz_imp_semindels
+plink2 --pfile imp_semduplicatas --snps-only just-acgt --make-pgen --out imp_semindels
 
 #Fazendo arquivo updatesex:
-awk '{print $2, $5}' SCZ_imput.psam > upd_sex_scz.txt
-
+awk '{print $2, $5}' arquivo_antes_de_imputar.fam > upd_sex.txt
+gedit upd_sex.txt
+#colocar cabeçalho: '#IID SEX', salvar
 #Fazendo arquivo fenotipo
-awk '{print $2, $6}' SCZ_imput.psam > upd_pheno_scz.txt
+awk '{print $2, $6}' arquivo_antes_de_imputar.fam > upd_pheno.txt
 
 #Atualizando fenotipo e sexo
-plink2 --pfile scz_imp_semindels --update-sex upd_sex_scz.txt --pheno upd_pheno_scz.txt --make-pgen --out scz_imputado_sex_pheno
+plink2 --pfile imp_semindels --update-sex upd_sex.txt --pheno upd_pheno.txt --make-pgen --out imputado_sex_pheno
 
 #QC
-plink2 --pfile scz_imputado_sex_pheno --maf 0.01 --mind 0.1 --geno 0.1 --hwe 0.000001 --make-pgen --out scz_imputado_QC
+plink2 --pfile imputado_sex_pheno --maf 0.01 --mind 0.1 --geno 0.1 --hwe 0.000001 --make-pgen --out imputado_QC
 
 
 
