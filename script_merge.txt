@@ -12,18 +12,17 @@
 
 # Partindo dos arquivos saídos do controle de qualidade pós-imputação, remover SNPs duplicados no dataset (rs ids duplicados são provavelmente variantes trialélicas)
 # Fazer os proximos comandos para todos os datasets que se deseja fazer merge
-plink2 --pfile dataset1 --rm-dup exclude-mismatch --make-pgen --out dataset1_semdup
-plink2 --pfile dataset1_semdup --export vcf --out dataset1_semdup
-bgzip -c dataset1_semdup.vcf > dataset1_semdup.vcf.gz 
-bcftools index dataset1_semdup.vcf.gz
+plink2 --pfile dataset1 --export vcf --out dataset1_vcf
+bgzip -c dataset1_vcf.vcf > dataset1.vcf.gz 
+bcftools index dataset1.vcf.gz
 
 # Juntar os arquivos
-bcftools merge -Ov dataset1_semdup.vcf.gz dataset2_semdup.vcf.gz dataset3_semdup.vcf.gz -o merge.vcf
+bcftools merge -Ov dataset1.vcf.gz dataset2.vcf.gz dataset3.vcf.gz -o merge.vcf
 
 ############ Controle de qualidade pós-merge ##############
 
 #1) Filtros
-plink2 --vcf merge.vcf --max-alleles 2 --maf 0.01 --geno 0.1 --hwe 0.001 --make-pgen --out merge_filtros
+plink2 --vcf merge.vcf --max-alleles 2 --maf 0.01 --geno 0.1 --hwe 0.000001 --make-pgen --out merge_filtros
 
 #2) Sem indels
 plink2 --pfile merge_filtros --snps-only just-acgt --make-bed --out merge_filtros_semindels
@@ -33,15 +32,15 @@ plink2 --pfile merge_filtros --snps-only just-acgt --make-bed --out merge_filtro
 plink2 --pfile merge_filtros_semindels --make-bed --out merge_filtros_semindels	
 
 #Fazendo arquivo update base:
-cat dataset1.fam > upd_base_merge.txt
-cat dataset2.fam >> upd_base_merge.txt
-cat dataset3.fam >> upd_base_merge.txt
+cat dataset1.psam > upd_base_merge.txt
+cat dataset2.psam >> upd_base_merge.txt
+cat dataset3.psam >> upd_base_merge.txt
 
 #Fazendo arquivo updatesex:
-awk '{print $1, $2, $5}' upd_base_merge.txt > upd_sex.txt
+awk '{print $1, $2}' upd_base_merge.txt > upd_sex.txt
 
 #Fazendo arquivo fenotipo
-awk '{print $1, $2, $6}' upd_base_merge.txt > upd_pheno.txt
+awk '{print $1, $3}' upd_base_merge.txt > upd_pheno.txt
 
 #Atualizando fenotipo e sexo
 plink --bfile merge_filtros_semindels --update-sex upd_sex.txt --pheno upd_pheno.txt --make-bed --out merge_update_sex_pheno
