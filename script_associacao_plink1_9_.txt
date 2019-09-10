@@ -1,0 +1,62 @@
+########################################################################
+# Script para teste de associação (GWAS) utilizando plink 1.9
+# Jessica Mauer
+# Data: 03/09/2019
+# PLINK v1.90b6.9 64-bit (4 Mar 2019)
+# Input: plink1.9 apos QC (.bed .bim .fam) + arquivo .eigenvec contendo os 4 (ou mais) primeiros PCs
+# Output: Graficos manhattan e qq em formato .png, tabela com 100 primeiros SNPs em formato .txt
+########################################################################
+
+# Calculando pca
+plink --bfile arquivo --pca 4 --out arquivo_pca
+
+#associacao bruta - gera arquivo .assoc e o .assoc_adjusted que contém os dados + correção para múltiplos testes
+
+plink --bfile arquivo --assoc --adjust --out assoc_bruta
+
+#Fazer associação mais robusta (reg logística), corrigindo para múltiplas comparações e também para o PCA
+#(mudar os numeros do parametro --covar-number de acordo com a posiçao dos PCs no .eigenvec)
+
+plink --bfile arquivo --logistic --adjust --covar arquivo_pca.eigenvec --covar-number 1-4 --out assoc_logistic
+
+#Selecionar do arquivo gerado, somente as linhas que tenham os resultados dos SNPs 
+
+egrep 'SNP|ADD' assoc_logistic.assoc.logistic > assoc_SNPs.assoc.logistic
+
+
+##### GRÁFICOS - R ######################################################
+# R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+# Importante: Para outputs gerados a partir do plink 1.9
+#######################################################################
+
+#importar o arquivo
+corrigido <- read.table("assoc_SNPs.assoc.logistic", header = T)
+bruto <-  read.table("assoc_bruta.assoc", header = T)
+
+library(qqman) 
+
+#QQ  Plot
+
+png("qq_bruto_P.png")
+qq(bruto$P)
+dev.off()
+
+png("qq_corrigido_P.png")
+qq(corrigido$P)
+dev.off()
+
+#Manhattan plot
+
+png("manhattan_corrigido_P.png")
+manhattan(corrigido, main = 'Manhattan Plot', col = c('indianred', 'indianred4'), cex.axis = 0.8, ylim = c(0, 10))
+dev.off()
+
+###### Selecionar os 100 primeiros SNPs pelo valor de P ##########
+
+library(dplyr)
+resultadoordenado <- arrange(corrigido, P)
+
+#Selecionar, os 100 primeiros snps e salvar em uma tabela
+
+topsnps <- slice(resultadoordenado, 1:100)
+write.table(topsnps, "top100snps.txt", row.names=F, quote = F)
