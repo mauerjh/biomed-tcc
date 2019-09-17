@@ -1,0 +1,49 @@
+#########################################################################
+# Script para calcular SNP heritability em amostra imputada (GCTA-LDMS)
+#Citations:
+
+#Method paper: Yang et al. (2015) Genetic variance estimation with imputed variants finds negligible missing heritability for human height and body mass index. Nature Genetics, 47:1114–1120.
+
+#GCTA software: Yang J, Lee SH, Goddard ME and Visscher PM. GCTA: a tool for Genome-wide Complex Trait Analysis. Am J Hum Genet. 2011 Jan 88(1): 76-82. [PubMed ID: 21167468]
+#########################################################################
+
+# segment based LD score
+
+gcta64 --bfile test --ld-score-region 200 --out test
+
+#  stratify the SNPs by LD scores of individual SNPs in R https://www.nature.com/articles/s41588-018-0108-x
+
+R
+lds_seg = read.table("test.score.ld",header=T,colClasses=c("character",rep("numeric",8)))
+quartiles=summary(lds_seg$ldscore_SNP)
+
+lb1 = which(lds_seg$ldscore_SNP <= quartiles[2])
+lb2 = which(lds_seg$ldscore_SNP > quartiles[2] & lds_seg$ldscore_SNP <= quartiles[3])
+lb3 = which(lds_seg$ldscore_SNP > quartiles[3] & lds_seg$ldscore_SNP <= quartiles[5])
+lb4 = which(lds_seg$ldscore_SNP > quartiles[5])
+
+lb1_snp = lds_seg$SNP[lb1]
+lb2_snp = lds_seg$SNP[lb2]
+lb3_snp = lds_seg$SNP[lb3]
+lb4_snp = lds_seg$SNP[lb4]
+
+write.table(lb1_snp, "snp_group1.txt", row.names=F, quote=F, col.names=F)
+write.table(lb2_snp, "snp_group2.txt", row.names=F, quote=F, col.names=F)
+write.table(lb3_snp, "snp_group3.txt", row.names=F, quote=F, col.names=F)
+write.table(lb4_snp, "snp_group4.txt", row.names=F, quote=F, col.names=F)
+
+# making GRMs using SNPs stratified into different groups
+
+gcta64 --bfile test --extract snp_group1.txt --make-grm --out test_group1
+gcta64 --bfile test --extract snp_group2.txt --make-grm --out test_group2
+
+# REML analysis with multiple GRMs
+
+gcta64 --reml --mgrm multi_GRMs.txt --pheno phen.txt --out test --thread-num 10
+
+#    format of multi_grm.txt (no headline; each line represents the prefix of a GRM file)
+
+#test_group1
+#test_group2
+#...
+
