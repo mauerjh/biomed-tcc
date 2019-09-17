@@ -1,0 +1,107 @@
+########################################################################
+# Script para cálculo de SNP heritability usando cov-ldsc
+# Jessica Mauer
+# Data: 06/09/2019
+# PLINK v1.90b6.9 64-bit (4 Mar 2019)
+# R version 3.5.0 (2018-04-23) -- "Joy in Playing"
+# cov-ldsc
+# Input: plink1.9 apos QC (.bed .bim .fam)
+# Output: 
+########################################################################
+
+https://mathgen.stats.ox.ac.uk/impute/1000GP%20Phase%203%20haplotypes%206%20October%202014.html
+
+# maf
+
+./plink --bfile merge_qcfinal --maf 0.05 --make-bed --out merge_maf
+
+# make remove mhc file
+
+R
+chr <- 6
+bp1 <- 28477895
+bp2 <- 33448264
+mhc <- "mhc"
+as.data.frame(cbind(chr,bp1,bp2,mhc)) -> tabela
+write.table(tabela, "excludemhc.txt", col.names = F, row.names = F, quote=F)
+
+# tirar mhc 28477895-33448264
+
+./plink --bfile merge_maf --exclude range excludemhc.txt --make-bed --out merge_maf_sem_mhc
+
+#pruning
+
+./plink --bfile merge_maf_sem_mhc --indep-pairwise 50 5 0.2 --out merge_pruning
+./plink --bfile merge_maf_sem_mhc --extract merge_pruning.prune.in --make-bed --out merge_pruned_semmhc
+
+# map centimorgans
+
+./plink --bfile merge_pruned_semmhc --cm-map ./1000GP_Phase3/genetic_map_chr@_combined_b37.txt --make-bed --out merge_cm
+
+# dividir cromossomos
+
+for i in `seq 1 22`; do ./plink --bfile merge_cm --chr ${i} --make-bed --out merge_chr${i}; done
+
+# covariate ld score calculation
+
+conda activate ldsc
+
+plink --bfile merge_pruned_semmhc --pca 4 --out arquivo_pca_herit
+
+for i in `seq 1 22`; do python ./ldsc/cov-ldsc/ldsc.py --bfile merge_chr${i} --l2 --ld-wind-cm 20 --cov arquivo_pca_herit.eigenvec --out merge_chr${i}_20cm_covldsc; done
+
+# GWAS 
+
+./plink --bfile merge_pruned_semmhc --assoc --adjust --out assoc_bruta_herit
+
+./plink --bfile merge_pruned_semmhc --logistic --adjust --covar arquivo_pca_herit.eigenvec --covar-number 1-4 --out assoc_logistic_herit
+
+./plink2 --bfile merge_pruned_semmhc --adjust --covar arquivo_pca_herit.eigenvec --covar-col-nums 3-6 --glm --out assoc_merge_herit
+
+egrep 'SNP|ADD' assoc_logistic_herit.assoc.logistic > assoc_SNPs_herit.assoc.logistic
+egrep '#|ADD' assoc_merge_herit.PHENO1.glm.logistic > sumstats_merge.PHENO1.glm.logistic
+
+R
+
+sumstats <- read.table("sumstats_merge.PHENO1.glm.logistic", header = T, comment.char="@")
+corrigido <- read.table("assoc_SNPs_herit.assoc.logistic", header = T)
+bruto <-  read.table("assoc_bruta_herit.assoc", header = T)
+
+#renomear colunas
+names(sumstats)[3] <- "SNP"
+names(sumstats)[4] <- "A2"
+
+#excluir colunas desnecessarias
+sumstats$X.CHROM <- NULL
+sumstats$POS <- NULL
+sumstats$ALT <- NULL
+sumstats$TEST <- NULL
+sumstats$OBS_CT <- NULL
+sumstats$LOG.OR._SE <- NULL
+sumstats$Z_STAT <- NULL
+
+write.table(sumstats, "sumstats_merge.txt", col.names = T, row.names = F, quote = F)
+
+library(qqman) 
+
+png("qq_bruto_herit.png")
+qq(bruto$P)
+dev.off()
+
+png("qq_corrigido_herit.png")
+qq(corrigido$P)
+dev.off()
+
+png("manhattan_corrigido_herit.png")
+manhattan(corrigido, main = 'Manhattan Plot for SNP heritability', col = c('indianred', 'indianred4'), cex.axis = 0.8, ylim = c(0, 10))
+dev.off()
+
+# snp heritability estimation
+
+wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+bunzip2 w_hm3.snplist.bz2
+
+./ldsc/cov-ldsc/munge_sumstats.py --sumstats sumstats_merge.txt --N 2926 --out merge_munge 
+
+./ldsc/cov-ldsc/ldsc.py --h2 merge_munge.sumstats.gz --ref-ld-chr merge_chr@_20cm_covldsc --w-ld-chr merge_chr@_20cm_covldsc --out merge_anydisorder_h2
+

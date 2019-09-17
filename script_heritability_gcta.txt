@@ -1,0 +1,30 @@
+# SNP Heritability GCTA
+
+#estimate genetic correlation matrix
+
+gcta64 --bfile inpd_pheno_semna --autosome --maf 0.01 --make-grm --out teste_inpd_grm --thread-num 10
+
+# remove cryptic relatedness
+
+./gcta64 --grm teste_inpd_grm --grm-cutoff 0.025 --make-grm --out test_inpd_rm025
+
+# GCTA-GREML analysis for a case-control study
+#For a case-control study, the phenotypic values of cases and controls should be specified as 1 and 0, respectively. Suppose you have prepared a phenotype file test_cc.phen. You can type the following command to estimate the variance explained by all the autosomal SNPs on the observed 0-1 scale and transform the estimate to that on the underlying liability scale (assuming the disease prevalence is 0.01 in this example)
+
+#####--pheno test.phen
+#Input phenotype data from a plain text file, e.g. test.phen. If the phenotypic value is coded as 0 or 1, then it will be recognized as a case-control study (0 for controls and 1 for cases, though it is compatible with PLINK format: 1 and 2, respectively). Missing value should be represented by "-9" or "NA".
+
+#Input file format
+#test.phen (no header line; columns are family ID, individual ID and phenotypes)
+
+##### --prevalence 0.01
+#Specify the disease prevalence for a case-control study. Once this option is specified, GCTA will transform the estimate of variance explained, V(1)/Vp, on the observed scale to that on the underlying scale, V(1)/Vp_L. The prevalence should be estimated from a general population in literatures rather than that estimated from the sample.
+
+./gcta64 --grm test_inpd_rm025 --pheno pheno_inpd_anydisorder.txt --reml --qcovar arquivo_pca_herit_inpd.eigenvec --out teste_inpd_h2_rm025 --thread-num 10
+
+./gcta64 --grm teste_inpd_grm --pheno pheno_inpd_anydisorder.txt --reml --qcovar arquivo_pca_herit_inpd.eigenvec --out teste_inpd_h2 --thread-num 10
+
+#GREML analysis, with pcs for CONTINUOUS phenotype
+
+#gcta64 --grm test --pheno test.phen --reml --qcovar test_10PCs.txt --out test --thread-num 10
+
