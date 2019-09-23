@@ -13,7 +13,7 @@ wget "http://genepi.qimr.edu.au/staff/sarahMe/enigma/MDS/HM3_b37.fam.gz"
 
 # QC e merge do dataset de interesse com 1k genomes
 
-export datafileraw=merge_qcfinal
+export datafileraw=merge_semasiaticos_final
 
 ./plink --bfile $datafileraw --hwe 1e-6 --geno 0.03 --maf 0.01 --make-bed --out ${datafileraw}_filtered
  
@@ -27,21 +27,21 @@ awk '{print $2}' HM3_b37.bim > HM3_b37.snplist.txt
 
 awk '{if (($5=="T" && $6=="A")||($5=="A" && $6=="T")||($5=="C" && $6=="G")||($5=="G" && $6=="C")) print $2, "ambig"; else print $2;}' $datafile.bim | grep -v ambig > local.snplist.txt
 
-./plink --bfile HM3_b37 --extract local.snplist.txt --make-bed --out external
+../plink --bfile HM3_b37 --extract local.snplist.txt --make-bed --out external
 
-./plink --bfile local --bmerge external.bed external.bim external.fam --make-bed --out HM3_b37merge
+../plink --bfile local --bmerge external.bed external.bim external.fam --make-bed --out HM3_b37merge
 
-./plink --bfile local --flip HM3_b37merge-merge.missnp --make-bed --out flipped
+../plink --bfile local --flip HM3_b37merge-merge.missnp --make-bed --out flipped
 
-./plink --bfile flipped --bmerge external.bed external.bim external.fam --make-bed --out HM3_b37merge
+../plink --bfile flipped --bmerge external.bed external.bim external.fam --make-bed --out HM3_b37merge
 
-./plink --bfile flipped --exclude HM3_b37merge-merge.missnp --make-bed --out flip_excluded
+../plink --bfile flipped --exclude HM3_b37merge-merge.missnp --make-bed --out flip_excluded
 
-./plink --bfile flip_excluded --bmerge external.bed external.bim external.fam --make-bed --out HM3_b37merge
+../plink --bfile flip_excluded --bmerge external.bed external.bim external.fam --make-bed --out HM3_b37merge
 
 # Cálculo PCs
 
-./plink --bfile HM3_b37merge --cluster --mind .05 --mds-plot 4 --extract local.snplist.txt --out HM3_b37mds
+../plink --bfile HM3_b37merge_semGIH --cluster --mind .05 --mds-plot 4 --extract local.snplist.txt --out HM3_b37mds
 
 awk 'BEGIN{OFS=","};{print $1,$2,$3,$4,$5,$6,$7}' >> HM3_b37mds2R.mds.csv HM3_b37mds.mds 
 
@@ -55,7 +55,7 @@ library(calibrate)
 
 mds.cluster = read.csv("HM3_b37mds2R.mds.csv", header = T)
 
-colors=rep("red",length(mds.cluster$C1))
+colors=rep(vector(),length(mds.cluster$C1))
 
 colors[which(mds.cluster$FID == "CEU")] <- "lightblue"
 
@@ -93,6 +93,8 @@ mds.cluster[2644:2693, "FID"] <- "TEPT" #NP
 # Colorir coortes - o inpd vai sobrar em vermelho
 
 colors[which(mds.cluster$FID == "PEP")] <- "green"
+
+colors[which(mds.cluster$FID == 0)] <- "green"
 
 colors[which(mds.cluster$FID == "SCZ")] <- "blue"
 
