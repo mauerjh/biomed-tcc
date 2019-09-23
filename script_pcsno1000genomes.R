@@ -71,8 +71,6 @@ colors[which(mds.cluster$FID == "CHD")] <- "orange"
 
 colors[which(mds.cluster$FID == "MEX")] <- "grey50"
 
-colors[which(mds.cluster$FID == "GIH")] <- "black"
-
 colors[which(mds.cluster$FID == "ASW")] <- "darkolivegreen"
 
 colors[which(mds.cluster$FID == "LWK")] <- "magenta"
@@ -103,7 +101,7 @@ colors[which(mds.cluster$FID == "TEPT")] <- "cyan"
 # Plot de fato e salvar em pdf
 
 pdf(file="mdsplottestec1xc2.pdf", width=7, height=7)
-plot(rev(mds.cluster$C2), rev(mds.cluster$C1), col=rev(colors), alpha = 0.5, ylab="Dimension 1", xlab="Dimension 2", pch=20, cex = 0.5)
+plot(rev(mds.cluster$C2), rev(mds.cluster$C1), col=rev(colors), ylab="Dimension 1", xlab="Dimension 2", pch=20, cex = 0.5)
 legend("topright", c("INPD", "PEP", "SCZ", "TEPT", "CEU","CHB","YRI","TSI","JPT","CHD","MEX","GIH","ASW","LWK","MKK"), fill=c("red", "green", "blue", "cyan", "lightblue", "brown", "yellow", "green4","purple","orange","grey50","black","darkolivegreen","magenta","darkblue"))
 dev.off()
 
