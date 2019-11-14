@@ -1,0 +1,17 @@
+########### Fine mapping 14/11/19 #########
+
+# pintar determinados snps: R
+snpsofinterest <- c(rs1111111, rs2222222, ....)
+manhattan(gwasResults, highlight = snpsOfInterest)
+
+# Fazer manhattan plots aumentado de uma regiao especifica. 
+# We can combine highlighting and limiting to a single chromosome
+# use the xlim graphical parameter to zoom in on a region of interest (e.g.: between position 200-500)
+
+manhattan(subset(gwasResults, CHR == 3), highlight = snpsOfInterest, xlim = c(200, 500), main = "Chr 3")
+
+# anotar o nome do snp com base num limiar de p
+#By default, this only annotates the top SNP per chromosome that exceeds the annotatePval threshold.
+
+manhattan(gwasResults, annotatePval = 0.01)
+
