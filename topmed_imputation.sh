@@ -56,48 +56,30 @@ ESC
 chmod 755 ./filterCHR9-22
 nohup ./filterCHR9-22 &
 
-#Filtrar variantes por qualidade da imputação (info score)
-
-vi filterINFO1-8
-i
-bcftools filter 1filter.vcf.gz -e 'INFO<0.8' -Oz -o 1filterinfo.vcf.gz
-bcftools filter 2filter.vcf.gz -e 'INFO<0.8' -Oz -o 2filterinfo.vcf.gz
-bcftools filter 3filter.vcf.gz -e 'INFO<0.8' -Oz -o 3filterinfo.vcf.gz
-bcftools filter 4filter.vcf.gz -e 'INFO<0.8' -Oz -o 4filterinfo.vcf.gz
-bcftools filter 5filter.vcf.gz -e 'INFO<0.8' -Oz -o 5filterinfo.vcf.gz
-bcftools filter 6filter.vcf.gz -e 'INFO<0.8' -Oz -o 6filterinfo.vcf.gz
-bcftools filter 7filter.vcf.gz -e 'INFO<0.8' -Oz -o 7filterinfo.vcf.gz
-bcftools filter 8filter.vcf.gz -e 'INFO<0.8' -Oz -o 8filterinfo.vcf.gz
-ESC
-:x
-
-chmod 755 ./filterINFO1-8
-nohup ./filterINFO1-8 &
-
-vi filterINFO9-22
-i
-bcftools filter 9filter.vcf.gz -e 'INFO<0.8' -Oz -o 9filterinfo.vcf.gz
-bcftools filter 10filter.vcf.gz -e 'INFO<0.8' -Oz -o 10filterinfo.vcf.gz
-bcftools filter 11filter.vcf.gz -e 'INFO<0.8' -Oz -o 11filterinfo.vcf.gz
-bcftools filter 12filter.vcf.gz -e 'INFO<0.8' -Oz -o 12filterinfo.vcf.gz
-bcftools filter 13filter.vcf.gz -e 'INFO<0.8' -Oz -o 13filterinfo.vcf.gz
-bcftools filter 14filter.vcf.gz -e 'INFO<0.8' -Oz -o 14filterinfo.vcf.gz
-bcftools filter 15filter.vcf.gz -e 'INFO<0.8' -Oz -o 15filterinfo.vcf.gz
-bcftools filter 16filter.vcf.gz -e 'INFO<0.8' -Oz -o 16filterinfo.vcf.gz
-bcftools filter 17filter.vcf.gz -e 'INFO<0.8' -Oz -o 17filterinfo.vcf.gz
-bcftools filter 18filter.vcf.gz -e 'INFO<0.8' -Oz -o 18filterinfo.vcf.gz
-bcftools filter 19filter.vcf.gz -e 'INFO<0.8' -Oz -o 19filterinfo.vcf.gz
-bcftools filter 20filter.vcf.gz -e 'INFO<0.8' -Oz -o 20filterinfo.vcf.gz
-bcftools filter 21filter.vcf.gz -e 'INFO<0.8' -Oz -o 21filterinfo.vcf.gz
-bcftools filter 22filter.vcf.gz -e 'INFO<0.8' -Oz -o 22filterinfo.vcf.gz
-ESC
-:x
-
-chmod 755 ./filterINFO9-22
-nohup ./filterINFO9-22 &
-
 #juntando arquivos
 bcftools concat -Oz 1filterinfo.vcf.gz 2filterinfo.vcf.gz 3filterinfo.vcf.gz 4filterinfo.vcf.gz 5filterinfo.vcf.gz 6filterinfo.vcf.gz 7filterinfo.vcf.gz 8filterinfo.vcf.gz 9filterinfo.vcf.gz 10filterinfo.vcf.gz 11filterinfo.vcf.gz 12filterinfo.vcf.gz 13filterinfo.vcf.gz 14filterinfo.vcf.gz 15filterinfo.vcf.gz 16filterinfo.vcf.gz 17filterinfo.vcf.gz 18filterinfo.vcf.gz 19filterinfo.vcf.gz 20filterinfo.vcf.gz 21filterinfo.vcf.gz 22filterinfo.vcf.gz -o imp_bruta.vcf.gz
+
+#### Merge results GWAS with imputed information file and filter by R2 >= 6 (the results have been filtered by MAF before)
+# Extract columns of interest in GWAS results: CHR POS SNPID Allele1 Allele2 AF_Allele2 N BETA SE Tstatp.value
+zcat AD.chr19.SAIGE.txt.gz | awk '{print
+$1,$2,$3,$4,$5,$7,$8,$9,$10,$11,$12}' > temp_AD.chr19.results.txt
+# Extract columns of interest in imputation information: SNP Rsq
+zcat ../saige/chr19.info.gz | awk '{print $1,$7}' > temp_chr19.info.txt
+# Merge information from the GWAS and R2
+awk 'NR==FNR{a[$1]=$2; next} $3 in a{print $0,a[$3]}' temp_chr19.info.txt temp_AD.chr19.results.txt > temp
+# Filer by R2 >= 0.6 and put the header
+echo 'CHR POS SNPID Allele1 Allele2 AF_Allele2 N BETA SE Tstat p.value
+Rsq' > AD.chr19.results.QC.txt
+awk '{if ($12>=0.6) print $0}' temp >> AD.chr19.results.QC.txt
+#### Plot the results: Manhattan plot and regional plot
+awk '{if (NR>1) print $1,$2,$11}' temp_AD.chr19.results.QC.txt >
+temp_plot.AD.chr19.txt
+sort -k11 -g temp_AD.chr19.results.QC.txt | head # lowest p-value at
+19:45422946 , p = 9.3515193823689e-16
+awk '{if (NR==1) print $1,$2,$3,$11; else if ($2>= 44922946 && $2<=
+45922946) print $1,$2,"chr"$3,$11}' AD.chr19.results.QC.txt >
+temp_ld.AD.chr19.txt
+
 
 #Converter para plink2 format (pgen, pvar, psam)
 plink2 --vcf imp_bruta.vcf.gz --make-pgen --out imputacao_bruta
