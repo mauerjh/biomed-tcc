@@ -23,14 +23,14 @@ ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.f
 
 vi filterCHR1-8
 i
-bcftools filter 1.vcf.gz -e'MAF<0.01' -Oz -o 1filter.vcf.gz
-bcftools filter 2.vcf.gz -e'MAF<0.01' -Oz -o 2filter.vcf.gz
-bcftools filter 3.vcf.gz -e'MAF<0.01' -Oz -o 3filter.vcf.gz
-bcftools filter 4.vcf.gz -e'MAF<0.01' -Oz -o 4filter.vcf.gz
-bcftools filter 5.vcf.gz -e'MAF<0.01' -Oz -o 5filter.vcf.gz
-bcftools filter 6.vcf.gz -e'MAF<0.01' -Oz -o 6filter.vcf.gz
-bcftools filter 7.vcf.gz -e'MAF<0.01' -Oz -o 7filter.vcf.gz
-bcftools filter 8.vcf.gz -e'MAF<0.01' -Oz -o 8filter.vcf.gz
+bcftools filter chr1.dose.vcf.gz -e'MAF<0.01' -Oz -o 1filter.vcf.gz
+bcftools filter chr2.dose.vcf.gz -e'MAF<0.01' -Oz -o 2filter.vcf.gz
+bcftools filter chr3.dose.vcf.gz -e'MAF<0.01' -Oz -o 3filter.vcf.gz
+bcftools filter chr4.dose.vcf.gz -e'MAF<0.01' -Oz -o 4filter.vcf.gz
+bcftools filter chr5.dose.vcf.gz -e'MAF<0.01' -Oz -o 5filter.vcf.gz
+bcftools filter chr6.dose.vcf.gz -e'MAF<0.01' -Oz -o 6filter.vcf.gz
+bcftools filter chr7.dose.vcf.gz -e'MAF<0.01' -Oz -o 7filter.vcf.gz
+bcftools filter chr8.dose.vcf.gz -e'MAF<0.01' -Oz -o 8filter.vcf.gz
 ESC
 :x
 
@@ -39,20 +39,20 @@ nohup ./filterCHR1-8 &
 
 vi filterCHR9-22
 i
-bcftools filter 9.vcf.gz -e'MAF<0.01' -Oz -o 9filter.vcf.gz
-bcftools filter 10.vcf.gz -e'MAF<0.01' -Oz -o 10filter.vcf.gz
-bcftools filter 11.vcf.gz -e'MAF<0.01' -Oz -o 11filter.vcf.gz
-bcftools filter 12.vcf.gz -e'MAF<0.01' -Oz -o 12filter.vcf.gz
-bcftools filter 13.vcf.gz -e'MAF<0.01' -Oz -o 13filter.vcf.gz
-bcftools filter 14.vcf.gz -e'MAF<0.01' -Oz -o 14filter.vcf.gz
-bcftools filter 15.vcf.gz -e'MAF<0.01' -Oz -o 15filter.vcf.gz
-bcftools filter 16.vcf.gz -e'MAF<0.01' -Oz -o 16filter.vcf.gz
-bcftools filter 17.vcf.gz -e'MAF<0.01' -Oz -o 17filter.vcf.gz
-bcftools filter 18.vcf.gz -e'MAF<0.01' -Oz -o 18filter.vcf.gz
-bcftools filter 19.vcf.gz -e'MAF<0.01' -Oz -o 19filter.vcf.gz
-bcftools filter 20.vcf.gz -e'MAF<0.01' -Oz -o 20filter.vcf.gz
-bcftools filter 21.vcf.gz -e'MAF<0.01' -Oz -o 21filter.vcf.gz
-bcftools filter 22.vcf.gz -e'MAF<0.01' -Oz -o 22filter.vcf.gz
+bcftools filter chr9.dose.vcf.gz -e'MAF<0.01' -Oz -o 9filter.vcf.gz
+bcftools filter chr10.dose.vcf.gz -e'MAF<0.01' -Oz -o 10filter.vcf.gz
+bcftools filter chr11.dose.vcf.gz -e'MAF<0.01' -Oz -o 11filter.vcf.gz
+bcftools filter chr12.dose.vcf.gz -e'MAF<0.01' -Oz -o 12filter.vcf.gz
+bcftools filter chr13.dose.vcf.gz -e'MAF<0.01' -Oz -o 13filter.vcf.gz
+bcftools filter chr14.dose.vcf.gz -e'MAF<0.01' -Oz -o 14filter.vcf.gz
+bcftools filter chr15.dose.vcf.gz -e'MAF<0.01' -Oz -o 15filter.vcf.gz
+bcftools filter chr16.dose.vcf.gz -e'MAF<0.01' -Oz -o 16filter.vcf.gz
+bcftools filter chr17.dose.vcf.gz -e'MAF<0.01' -Oz -o 17filter.vcf.gz
+bcftools filter chr18.dose.vcf.gz -e'MAF<0.01' -Oz -o 18filter.vcf.gz
+bcftools filter chr19.dose.vcf.gz -e'MAF<0.01' -Oz -o 19filter.vcf.gz
+bcftools filter chr20.dose.vcf.gz -e'MAF<0.01' -Oz -o 20filter.vcf.gz
+bcftools filter chr21.dose.vcf.gz -e'MAF<0.01' -Oz -o 21filter.vcf.gz
+bcftools filter chr22.dose.vcf.gz -e'MAF<0.01' -Oz -o 22filter.vcf.gz
 ESC
 :x
 
