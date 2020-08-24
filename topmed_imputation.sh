@@ -1,16 +1,18 @@
-plink2 --bfile arquivo --make-pgen --out arquivo_preimput
-plink2 --pfile ../INPD_todos_semhet_final --maf 0.01 --geno 0.1 --mind 0.1 --hwe 0.000001 --export vcf --out INPD_todos
-for i in `seq 1 22`; do plink2 --vcf INPD_todos.vcf --chr ${i} --export vcf --out chr${i}_INPD; done
-for i in `seq 1 22`; do vcf-sort chr${i}_INPD.vcf | bgzip -c > chr${i}_INPD_sort1.vcf.gz; done
-for i in `seq 1 22`; do ../../plink2 --vcf INPD_todos.vcf --chr ${i} --export vcf --out chr${i}_INPD; done
-for i in `seq 1 22`; do vcf-sort chr${i}_INPD.vcf | bgzip -c > chr${i}_INPD_sort1.vcf.gz; done
-for i in {1..22}; do echo bcftools index chr${i}_INPD_sort1.vcf.gz ; done >> indexar
+#################
+# TOPMED R2 IMPUTATION (MINIMAC4)
+# INPUT arquivos pós qc 
+#################
+
+../plink --bfile INPD2020_sempaisfam_semXY --maf 0.01 --geno 0.1 --mind 0.1 --hwe 0.000001 --recode vcf --keep-allele-order --out INPD2020_qc
+for i in `seq 1 22`; do ../plink --vcf INPD2020_qc.vcf --chr ${i} --recode vcf --keep-allele-order --out chr${i}_INPD2020; done
+for i in `seq 1 22`; do vcf-sort chr${i}_INPD2020.vcf | bgzip -c > chr${i}_INPD2020_sort1.vcf.gz; done
+for i in {1..22}; do echo bcftools index chr${i}_INPD2020_sort1.vcf.gz ; done >> indexar
 chmod 755 indexar
 ./indexar
-for i in {1..22}; do echo bcftools norm -cx chr${i}_INPD_sort1.vcf.gz -f human_g1k_v37.fasta -o chr${i}_INPD_TOPMED_ref.vcf; done >> normalizar
+for i in {1..22}; do echo bcftools norm -cx chr${i}_INPD2020_sort1.vcf.gz -f human_g1k_v37.fasta -o chr${i}_INPD2020_TOPMED_ref.vcf; done >> normalizar
 chmod 755 normalizar
 nohup ./normalizar &
-for i in `seq 1 22`; do vcf-sort chr${i}_INPD_TOPMED_ref.vcf| bgzip -c > chr${i}_INPD_fimTOPMED.vcf.gz; done
+for i in `seq 1 22`; do vcf-sort chr${i}_INPD2020_TOPMED_ref.vcf| bgzip -c > chr${i}_INPD2020_fimTOPMED.vcf.gz; done
  
 ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.fai
 
