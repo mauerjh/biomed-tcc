@@ -72,13 +72,14 @@ plink2 --pfile imputacao_bruta --rm-dup exclude-all list --make-pgen --out imp_s
 plink2 --pfile imp_semduplicatas --snps-only just-acgt --make-bed --out imp_semindels
 
 #Fazendo arquivo updatesex:
-awk '{print 0, $2, $5}' arquivo_antes_de_imputar.fam > upd_sex.txt
-paste upd_sex.txt imp_semindels.fam | awk '{print $1, $2, $6,$7.$3,$9}' > imputado_sex.fam
+awk '{print 0, $2, $5}' arquivo_imediatamente_antes_de_imputar.fam > upd_sex.txt
+paste upd_sex.txt imp_semindels.fam | awk '{print $1, $2, $6,$7,$3,$9}' > imputado_sex.fam
 cp imp_semindels.bed imputado_sex.bed
 cp imp_semindels.bim imputado_sex.bim
-r
+
 #Fazendo arquivo fenotipo
-awk '{print $2, $6}' arquivo_antes_de_imputar.fam > upd_pheno.txt
+awk '{print 0, $2, $6}' arquivo_imediatamente_antes_de_imputar.fam > upd_pheno.txt
+plink2 --bfile imputado_sex --pheno upd_pheno.txt --make-bed imputado_sex_pheno
 
 #QC
-plink2 --bfile imputado_sex --maf 0.01 --mind 0.1 --geno 0.1 --hwe 0.000001 --make-bed --out imputado_QC
+plink2 --bfile imputado_sex_pheno --maf 0.01 --mind 0.1 --geno 0.1 --hwe 0.000001 --make-bed --out imputado_QC
