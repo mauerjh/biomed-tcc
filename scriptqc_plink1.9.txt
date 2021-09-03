@@ -28,6 +28,8 @@ plink --bfile ptsd_genotype_QC --mind 0.1 --make-bed --out ptsd_genotype_QC_mind
 #Separar a parte homóloga XY (baseado no hg 19 que é o pedido pelo Sanger Imputation)
 plink --bfile ptsd_genotype_QC --split-x b37 --make-bed --out ptsd_genotype_split
 
+#comentario teste
+
 ### OBS: se o plink não deixar porque já existe uma região ‘XY’, fazer
 plink --bfile ptsd_genotype_QC --merge-x --make-bed --out ptsd_genotype_merge
 plink --bfile ptsd_genotype_merge --split-x b37 --make-bed --out ptsd_genotype_split
